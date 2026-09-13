@@ -12,7 +12,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
+class _HomePageState extends State<HomePage> {
   final List<String> _liveIds = []; // kept-alive page ids (LRU order)
   final Map<String, int> _reloads = {}; // pageId -> reload counter
   final Map<String, WebContent> _widgets = {}; // reused widget per pageId
@@ -24,28 +24,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     StoreScope.of(context).addListener(_onStore);
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     StoreScope.of(context).removeListener(_onStore);
     super.dispose();
-  }
-
-  // On Windows, minimizing fires `hidden` and restoring fires `resumed`.
-  // Only pause on real `hidden` (minimize) — NOT on `inactive`, because
-  // clicking into the WebView2 child briefly fires `inactive`, which would
-  // pause the webview and cause a black screen.
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.hidden) {
-      setAllWebviewsSuspended(true);
-    } else if (state == AppLifecycleState.resumed) {
-      setAllWebviewsSuspended(false);
-    }
   }
 
   void _onStore() {

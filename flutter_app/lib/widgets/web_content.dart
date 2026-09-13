@@ -9,17 +9,6 @@ const _desktopUA =
 
 String _uaFor(PageItem page) => page.ua == 'desktop' ? _desktopUA : _mobileUA;
 
-// Registry of webviews that can be paused/resumed (used on Windows to drop the
-// WebView2 overlay when the window is minimized).
-final List<void Function(bool paused)> _webviewSuspenders = [];
-
-/// Pause (paused=true) or resume all live webviews.
-void setAllWebviewsSuspended(bool paused) {
-  for (final fn in List.of(_webviewSuspenders)) {
-    try { fn(paused); } catch (_) {}
-  }
-}
-
 /// Page content backed by flutter_inappwebview (Android WebView / Windows WebView2).
 class WebContent extends StatefulWidget {
   final PageItem page;
@@ -33,29 +22,6 @@ class WebContent extends StatefulWidget {
 class WebContentState extends State<WebContent> {
   bool _loading = true;
   String? _error;
-  InAppWebViewController? _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _webviewSuspenders.add(_setSuspended);
-  }
-
-  @override
-  void dispose() {
-    _webviewSuspenders.remove(_setSuspended);
-    super.dispose();
-  }
-
-  void _setSuspended(bool paused) {
-    final c = _controller;
-    if (c == null) return;
-    if (paused) {
-      c.pause();
-    } else {
-      c.resume();
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +35,6 @@ class WebContentState extends State<WebContent> {
           supportZoom: false,
         ),
         initialUrlRequest: URLRequest(url: WebUri(widget.page.url)),
-        onWebViewCreated: (c) => _controller = c,
         onLoadStart: (c, u) {
           if (mounted) setState(() => _loading = true);
         },
