@@ -21,20 +21,29 @@ class _HomePageState extends State<HomePage> {
 
   AppStore get _store => StoreScope.of(context);
 
+  AppStore? _listened; // the store _onStore is currently attached to
+
+  // InheritedWidget lookup is illegal in initState, and its guard is an assert
+  // (compiled out in release, so the mistake only shows up in a debug build).
   @override
-  void initState() {
-    super.initState();
-    StoreScope.of(context).addListener(_onStore);
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final store = StoreScope.of(context);
+    if (identical(_listened, store)) return;
+    _listened?.removeListener(_onStore);
+    _listened = store;
+    store.addListener(_onStore);
   }
 
   @override
   void dispose() {
-    StoreScope.of(context).removeListener(_onStore);
+    _listened?.removeListener(_onStore);
     super.dispose();
   }
 
   void _onStore() {
-    final store = _store;
+    final store = _listened;
+    if (store == null) return;
     final l = store.loadingId;
     if (l != null && l == store.activeId && _prevLoading == null) {
       setState(() => _reloads[l] = (_reloads[l] ?? 0) + 1);
